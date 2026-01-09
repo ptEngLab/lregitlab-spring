@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: lre-gitlab
+
+  datasource:
+    url: jdbc:sqlite:db/lre-gitlab.db
+    driver-class-name: org.sqlite.JDBC
+
+  sql:
+    init:
+      mode: always
+      continue-on-error: false
+
+logging:
+  level:
+    com.rbs: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# GitLab Configuration
+gitlab:
+  url: ${GITLAB_URL:https://gitlab.com/api/v4/}
+  token: ${GITLAB_TOKEN:}
+  per-page-records: 100
+  thread-pool-size: 5
+
+# LRE Configuration
+lre:
+  url: ${LRE_URL:http://localhost:54345}
+  username: ${LRE_USERNAME}
+  password: ${LRE_PASSWORD}
+  authenticate-with-token: true
+  session-ttl: PT10M
+  failure-backoff: PT5M
+  max-consecutive-failures: 3
+
+http:
+  connection:
+    timeout: 30000        # 30 seconds connection timeout
+    pool:
+      max: 50             # Max total connections
+      ttl: 300000         # 5 minutes - connections live max 5 min
+      idle:
+        timeout: 60000    # 1 minute - validate connections idle > 1 min
+  read:
+    timeout: 30000        # 30 seconds read timeout
+
+# Server Configuration
+server:
+  port: 8080
