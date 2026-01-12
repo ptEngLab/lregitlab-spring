@@ -47,7 +47,7 @@ public class LreAuthApiClient {
 
             log.debug("Logout successful");
         } catch (RestClientException e) {
-            HttpErrorHandler.handleRestClientError(
+            HttpErrorHandler.toDomainException(
                     e,
                     logoutUrl,
                     "LRE logout"
@@ -67,7 +67,7 @@ public class LreAuthApiClient {
 
             log.debug("Web login successful for project: {}/{}", domain, project);
         } catch (RestClientException e) {
-            HttpErrorHandler.handleRestClientError(
+            HttpErrorHandler.toDomainException(
                     e,
                     webLoginUrl,
                     "LRE web login for project: " + domain + "/" + project
@@ -102,7 +102,7 @@ public class LreAuthApiClient {
                 return false;
             }
 
-            HttpErrorHandler.handleRestClientError(
+            HttpErrorHandler.toDomainException(
                     e,
                     authUrl,
                     "LRE Token authentication"
@@ -113,7 +113,7 @@ public class LreAuthApiClient {
                     "Token authentication failed: {}",
                     e.getMessage()
             );
-            HttpErrorHandler.handleRestClientError(
+            HttpErrorHandler.toDomainException(
                     e,
                     authUrl,
                     "LRE Token authentication"
@@ -149,7 +149,7 @@ public class LreAuthApiClient {
                 return false;
             }
 
-            HttpErrorHandler.handleRestClientError(
+            HttpErrorHandler.toDomainException(
                     e,
                     authUrl,
                     "LRE basic authentication"
@@ -160,7 +160,7 @@ public class LreAuthApiClient {
                     "Basic authentication failed: {}",
                     e.getMessage()
             );
-            HttpErrorHandler.handleRestClientError(
+            HttpErrorHandler.toDomainException(
                     e,
                     authUrl,
                     "LRE basic authentication"
