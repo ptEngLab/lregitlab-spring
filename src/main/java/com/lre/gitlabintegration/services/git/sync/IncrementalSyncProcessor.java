@@ -1,10 +1,7 @@
 package com.lre.gitlabintegration.services.git.sync;
 
 import com.lre.gitlabintegration.dto.gitlab.GitLabCommit;
-import com.lre.gitlabintegration.dto.sync.SyncContext;
-import com.lre.gitlabintegration.dto.sync.SyncRequest;
-import com.lre.gitlabintegration.dto.sync.SyncResponse;
-import com.lre.gitlabintegration.dto.sync.SyncResult;
+import com.lre.gitlabintegration.dto.sync.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.lre.gitlabintegration.services.git.sync.SyncResponseBuilder.incremental;
 import static com.lre.gitlabintegration.util.constants.AppConstants.STATUS_FAILED;
 import static com.lre.gitlabintegration.util.constants.AppConstants.STATUS_SUCCESS;
 
@@ -20,13 +18,12 @@ import static com.lre.gitlabintegration.util.constants.AppConstants.STATUS_SUCCE
 @RequiredArgsConstructor
 public class IncrementalSyncProcessor {
 
-
     private final SyncAnalyzer analyzer;
     private final LreSyncService lreSyncService;
     private final SyncStateUpdater stateUpdater;
 
     public SyncResponse process(SyncContext ctx) {
-        List<GitLabCommit> previous = ctx.previous();
+        List<SyncStateEntry> previous = ctx.previous();
         List<GitLabCommit> current = ctx.current();
         SyncRequest req = ctx.request();
 
@@ -34,54 +31,30 @@ public class IncrementalSyncProcessor {
 
         SyncResult result = analyzer.analyze(previous, current);
         if (!result.hasChanges()) {
-            List<SyncResponse.ScriptChange> unchangedChanges = SyncResponseBuilder.buildUnchangedList(result.unchangedScripts());
+            List<ScriptChange> unchangedChanges = SyncResponseBuilder.buildUnchangedList(result.unchangedScripts());
             log.info("No changes detected");
             return SyncResponseBuilder.noChanges(unchangedChanges);
         }
 
         logSyncSummary(result);
 
-        // Perform uploads and deletes
-        List<SyncResponse.ScriptChange> uploadChanges = lreSyncService.uploadScripts(ctx.request(), result.scriptsToUpload());
+        List<ScriptChange> uploadChanges = lreSyncService.uploadScripts(req, result.scriptsToUpload());
+        List<ScriptChange> deleteChanges = lreSyncService.deleteScripts(req, result.scriptsToDelete());
 
-        List<SyncResponse.ScriptChange> deleteChanges = lreSyncService.deleteScripts(ctx.request(), result.scriptsToDelete());
+        List<ScriptChange> unchangedChanges = SyncResponseBuilder.buildUnchangedList(result.unchangedScripts());
 
-        // Create unchanged list
-        List<SyncResponse.ScriptChange> unchangedChanges = SyncResponseBuilder.buildUnchangedList(result.unchangedScripts());
+        ChangeGroups groups = categorize(uploadChanges, deleteChanges);
 
-        // Categorize all changes
-        List<SyncResponse.ScriptChange> uploadedSuccess = uploadChanges.stream()
-                .filter(c -> STATUS_SUCCESS.equals(c.status()))
-                .toList();
+        stateUpdater.updateStateWithPartialSuccess(ctx, result, groups.uploadedSuccess(), groups.deletedSuccess());
 
-        List<SyncResponse.ScriptChange> deletedSuccess = deleteChanges.stream()
-                .filter(c -> STATUS_SUCCESS.equals(c.status()))
-                .toList();
-
-        List<SyncResponse.ScriptChange> allFailed = new ArrayList<>();
-
-        allFailed.addAll(uploadChanges.stream()
-                .filter(c -> STATUS_FAILED.equals(c.status()))
-                .toList());
-
-        allFailed.addAll(deleteChanges.stream()
-                .filter(c -> STATUS_FAILED.equals(c.status()))
-                .toList());
-
-        stateUpdater.updateStateWithPartialSuccess(ctx, result, uploadedSuccess, deletedSuccess);
-
-        // Log summary
-        List<SyncResponse.ScriptChange> allChanges = new ArrayList<>();
+        List<ScriptChange> allChanges = new ArrayList<>(uploadChanges.size() + deleteChanges.size());
         allChanges.addAll(uploadChanges);
         allChanges.addAll(deleteChanges);
         lreSyncService.logSyncSummary(allChanges);
 
-        return SyncResponseBuilder.incremental(uploadedSuccess, deletedSuccess, unchangedChanges, allFailed);
+        return incremental(groups.uploadedSuccess(), groups.deletedSuccess(), unchangedChanges, groups.failed());
     }
 
-    /**
-     * Logs a summary of the sync analysis results.
-     */
     private void logSyncSummary(SyncResult result) {
         log.info("SYNC SUMMARY: total={} | upload={} | delete={} | unchanged={}",
                 result.totalScripts(),
@@ -89,4 +62,32 @@ public class IncrementalSyncProcessor {
                 result.scriptsToDelete().size(),
                 result.unchangedScripts().size());
     }
+
+    private ChangeGroups categorize(List<ScriptChange> uploads, List<ScriptChange> deletes) {
+
+        List<ScriptChange> uploadedSuccess = new ArrayList<>();
+        List<ScriptChange> deletedSuccess = new ArrayList<>();
+        List<ScriptChange> failed = new ArrayList<>();
+
+        // Process uploads
+        for (ScriptChange c : uploads) {
+            if (STATUS_SUCCESS.equals(c.status())) {
+                uploadedSuccess.add(c);
+            } else if (STATUS_FAILED.equals(c.status())) {
+                failed.add(c);
+            }
+        }
+
+        // Process deletes
+        for (ScriptChange c : deletes) {
+            if (STATUS_SUCCESS.equals(c.status())) {
+                deletedSuccess.add(c);
+            } else if (STATUS_FAILED.equals(c.status())) {
+                failed.add(c);
+            }
+        }
+
+        return new ChangeGroups(uploadedSuccess, deletedSuccess, failed);
+    }
+
 }

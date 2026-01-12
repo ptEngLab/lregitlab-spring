@@ -11,30 +11,46 @@ import org.springframework.stereotype.Component;
 
 import java.util.function.Supplier;
 
+import static com.lre.gitlabintegration.services.git.sync.SyncResponseBuilder.failureResponse;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SyncExecutionManager {
 
     private final SyncLockRepository lockRepository;
+
     private final LreSessionManager lreSessionManager;
 
     public SyncResponse execute(SyncRequest request, Supplier<SyncResponse> action) {
-        if (!lockRepository.acquireLock(request)) {
-            log.warn("Could not acquire lock for project: {}", request.getLreProject());
-            return SyncResponseBuilder.failureResponse("LOCK",
-                    new LreException("Cloud not acquire lock"),
-                    request);
-        }
+
+        boolean locked = false;
 
         try {
+
+            locked = lockRepository.acquireLock(request);
+
+            if (!locked) {
+
+                log.warn("Could not acquire lock for project: {}", request.getLreProject());
+
+                return failureResponse("LOCK_NOT_ACQUIRED", new LreException("Could not acquire lock"), request);
+            }
+
             lreSessionManager.ensureAuthenticated(request.getLreDomain(), request.getLreProject());
+
             return action.get();
+
         } catch (Exception e) {
+
             log.error("Sync failed for project: {}", request.getLreProject(), e);
-            return SyncResponseBuilder.failureResponse("SYNC EXCEPTION", e, request);
+
+            return failureResponse("SYNC_EXCEPTION", e, request);
+
         } finally {
-            lockRepository.releaseLock(request);
+
+            if (locked) lockRepository.releaseLock(request);
+
         }
     }
 }

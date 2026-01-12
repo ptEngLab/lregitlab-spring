@@ -6,7 +6,7 @@ import java.util.List;
 
 public record SyncContext(
         SyncRequest request,
-        List<GitLabCommit> previous,
+        List<SyncStateEntry> previous,
         List<GitLabCommit> current,
         boolean initial
 ) {

@@ -4,10 +4,12 @@ import com.lre.gitlabintegration.client.builder.LreAuthUrlFactory;
 import com.lre.gitlabintegration.config.http.LreApiClientBaseRestApiClient;
 import com.lre.gitlabintegration.dto.lreauth.AuthenticationRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
+
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
@@ -64,7 +66,9 @@ public class LreAuthApiClient {
         String authUrl = authUrlFactory.getAuthUrlForUser();
 
         try {
-            apiClient.getWithBasicAuthBodiless(authUrl, username, password, MediaType.APPLICATION_JSON);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBasicAuth(username, password, StandardCharsets.UTF_8);
+            apiClient.get(authUrl, Void.class, headers);
             log.debug("LRE Authentication successful with username/password");
             return true;
 

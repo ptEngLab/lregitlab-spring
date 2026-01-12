@@ -6,10 +6,9 @@ import java.util.List;
 
 public record SyncResult(
         List<GitLabCommit> scriptsToUpload,
-        List<GitLabCommit> scriptsToDelete,
+        List<SyncStateEntry> scriptsToDelete,
         List<GitLabCommit> unchangedScripts
 ) {
-
     public boolean hasChanges() {
         return !scriptsToUpload.isEmpty() || !scriptsToDelete.isEmpty();
     }

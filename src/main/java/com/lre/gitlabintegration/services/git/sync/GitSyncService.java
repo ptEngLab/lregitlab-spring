@@ -23,19 +23,18 @@ public class GitSyncService {
 
     public SyncResponse sync(SyncRequest request) {
         return executionManager.execute(request, () -> {
-
             SyncContext ctx = modeResolver.resolve(request);
-            log.info(
-                    "Starting Git-LRE sync for project: {}, initial={}",
-                    request.getLreProject(),
-                    ctx.isInitial()
-            );
-
-            if (ctx.isInitial()) {
-                return initialSyncProcessor.process(ctx);
-            } else {
-                return incrementalSyncProcessor.process(ctx);
-            }
+            String mode = ctx.isInitial() ? "INITIAL" : "INCREMENTAL";
+            log.info("Starting Git-LRE sync for project: {} in {} mode", request.getLreProject(), mode);
+            return processByMode(ctx);
         });
     }
+
+
+    private SyncResponse processByMode(SyncContext ctx) {
+        return ctx.isInitial()
+                ? initialSyncProcessor.process(ctx)
+                : incrementalSyncProcessor.process(ctx);
+    }
+
 }

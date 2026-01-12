@@ -2,109 +2,96 @@ package com.lre.gitlabintegration.services.git.sync;
 
 import com.lre.gitlabintegration.dto.gitlab.GitLabCommit;
 import com.lre.gitlabintegration.dto.sync.SyncResult;
+import com.lre.gitlabintegration.dto.sync.SyncStateEntry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Slf4j
 @Service
 public class SyncAnalyzer {
 
-    /**
-     * Compares previous commits with current commits and determines
-     * which scripts need to be uploaded, deleted, or are unchanged.
-     */
-    public SyncResult analyze(
-            List<GitLabCommit> previous,
-            List<GitLabCommit> current
-    ) {
-        // Defensive null handling
-        previous = previous != null ? previous : List.of();
-        current = current != null ? current : List.of();
+    public SyncResult analyze(List<SyncStateEntry> previous, List<GitLabCommit> current) {
+        List<SyncStateEntry> prevList = previous != null ? previous : List.of();
+        List<GitLabCommit> currList = current != null ? current : List.of();
 
-        if (previous.isEmpty() && current.isEmpty()) {
+        if (prevList.isEmpty() && currList.isEmpty()) {
             return new SyncResult(List.of(), List.of(), List.of());
         }
 
-        Map<String, GitLabCommit> prevMap = toMap(previous);
-        Map<String, GitLabCommit> currMap = toMap(current);
+        Map<String, SyncStateEntry> prevByPath = indexPrevious(prevList);
+        Map<String, GitLabCommit> currByPath = indexCurrent(currList);
 
-        List<GitLabCommit> toUpload = new ArrayList<>();
-        List<GitLabCommit> toDelete = new ArrayList<>();
-        List<GitLabCommit> unchanged = new ArrayList<>();
+        List<SyncStateEntry> toDelete = findDeletes(prevList, currByPath);
+        Changes changes = findUploadsAndUnchanged(currList, prevByPath);
 
-        // Deletions - scripts that existed before but don't exist now
-        previous.forEach(commit -> {
-            if (!currMap.containsKey(commit.getPath())) {
-                log.debug("Script deleted: {}", commit.getPath());
-                toDelete.add(commit);
-            }
-        });
-
-        // Additions or modifications - new scripts or scripts with different SHA
-        current.forEach(commit -> {
-            GitLabCommit prev = prevMap.get(commit.getPath());
-
-            if (prev == null) {
-                log.debug("Script new to upload: {}", commit.getPath());
-                toUpload.add(commit);
-            } else if (hasChanged(prev, commit)) {
-                log.debug("Script changed to upload: {}", commit.getPath());
-                toUpload.add(commit);
-            } else {
-                unchanged.add(commit);
-            }
-        });
-
-        log.info(
-                "Analysis complete: upload={}, delete={}, unchanged={}",
-                toUpload.size(),
+        log.info("Analysis complete: upload={}, delete={}, unchanged={}",
+                changes.toUpload().size(),
                 toDelete.size(),
-                unchanged.size()
+                changes.unchanged().size()
         );
 
-        return new SyncResult(toUpload, toDelete, unchanged);
+        return new SyncResult(changes.toUpload(), toDelete, changes.unchanged());
     }
 
-    /**
-     * Checks if a commit has changed by comparing SHA values
-     */
-    private boolean hasChanged(GitLabCommit previous, GitLabCommit current) {
-        if (previous == null || current == null) {
-            return true;
-        }
 
-        // Check if either commit is empty
-        if (previous.isEmpty() || current.isEmpty()) {
-            return previous.isEmpty() != current.isEmpty();
+    private Map<String, SyncStateEntry> indexPrevious(List<SyncStateEntry> prevList) {
+        Map<String, SyncStateEntry> map = new HashMap<>();
+        for (SyncStateEntry entry : prevList) {
+            if (entry == null || entry.path() == null) continue;
+            map.putIfAbsent(entry.path(), entry);
         }
-
-        // Compare SHA values
-        return !Objects.equals(previous.getSha(), current.getSha());
+        return map;
     }
 
-    /**
-     * Converts a list of commits to a map keyed by path
-     */
-    private Map<String, GitLabCommit> toMap(List<GitLabCommit> commits) {
-        return commits.stream()
-                .filter(Objects::nonNull)
-                .filter(commit -> commit.getPath() != null)
-                .collect(Collectors.toMap(
-                        GitLabCommit::getPath,
-                        commit -> commit,
-                        (existing, duplicate) -> {
-                            log.warn(
-                                    "Duplicate path found: {}, keeping first occurrence",
-                                    existing.getPath()
-                            );
-                            return existing;
-                        }
-                ));
+    private Map<String, GitLabCommit> indexCurrent(List<GitLabCommit> currList) {
+        Map<String, GitLabCommit> map = new HashMap<>();
+        for (GitLabCommit commit : currList) {
+            if (commit == null || commit.getPath() == null) continue;
+            map.putIfAbsent(commit.getPath(), commit);
+        }
+        return map;
+    }
+
+    private List<SyncStateEntry> findDeletes(List<SyncStateEntry> prevList,
+                                             Map<String, GitLabCommit> currByPath) {
+        List<SyncStateEntry> toDelete = new ArrayList<>();
+        for (SyncStateEntry prev : prevList) {
+            if (prev == null || prev.path() == null) continue;
+            if (!currByPath.containsKey(prev.path())) {
+                toDelete.add(prev);
+            }
+        }
+        return toDelete;
+    }
+
+    private Changes findUploadsAndUnchanged(List<GitLabCommit> currList, Map<String, SyncStateEntry> prevByPath) {
+        List<GitLabCommit> toUpload = new ArrayList<>();
+        List<GitLabCommit> unchanged = new ArrayList<>();
+
+        for (GitLabCommit cur : currList) {
+            if (cur == null || cur.getPath() == null) continue;
+            SyncStateEntry prev = prevByPath.get(cur.getPath());
+            boolean upload = prev == null || hasChanged(prev, cur);
+            if (upload) toUpload.add(cur);
+            else unchanged.add(cur);
+
+        }
+
+        return new Changes(toUpload, unchanged);
+    }
+
+    private boolean hasChanged(SyncStateEntry previous, GitLabCommit current) {
+        String prevSha = previous.commitSha();
+        String curSha = current.getSha();
+
+        if (prevSha == null || prevSha.isBlank() || curSha == null || curSha.isBlank()) {
+            return !Objects.equals(prevSha, curSha);
+        }
+        return !prevSha.equals(curSha);
+    }
+
+    private record Changes(List<GitLabCommit> toUpload, List<GitLabCommit> unchanged) {
     }
 }

@@ -22,14 +22,9 @@ public class SyncController {
     private final GitSyncService gitSyncService;
 
     @PostMapping("/sync")
-    public ResponseEntity<@NonNull SyncResponse> sync(
-            @Valid @RequestBody SyncRequest request
-    ) {
-        log.info(
-                "Received sync request for project: {}, ref: {}",
-                request.getLreProject(),
-                request.getRef()
-        );
+    public ResponseEntity<@NonNull SyncResponse> sync(@Valid @RequestBody SyncRequest request) {
+
+        log.info("Received sync request for project: {}, ref: {}", request.getLreProject(), request.getRef());
 
         SyncResponse response = gitSyncService.sync(request);
 

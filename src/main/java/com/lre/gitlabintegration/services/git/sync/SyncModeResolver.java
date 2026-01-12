@@ -3,6 +3,7 @@ package com.lre.gitlabintegration.services.git.sync;
 import com.lre.gitlabintegration.dto.gitlab.GitLabCommit;
 import com.lre.gitlabintegration.dto.sync.SyncContext;
 import com.lre.gitlabintegration.dto.sync.SyncRequest;
+import com.lre.gitlabintegration.dto.sync.SyncStateEntry;
 import com.lre.gitlabintegration.repository.SyncStateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +22,8 @@ public class SyncModeResolver {
     public SyncContext resolve(SyncRequest syncRequest) {
         List<GitLabCommit> current =
                 scanner.scanScripts(syncRequest.getGitlabProjectId(), syncRequest.getRef());
-        List<GitLabCommit> previous =
-                stateRepository.findPreviousCommits(syncRequest);
+        List<SyncStateEntry> previous =
+                stateRepository.findPreviousState(syncRequest);
 
         boolean initial = previous.isEmpty();
 
