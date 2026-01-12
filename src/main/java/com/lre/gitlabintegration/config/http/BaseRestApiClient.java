@@ -15,6 +15,7 @@ import org.springframework.web.client.RestClientException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 @Slf4j
 public class BaseRestApiClient {
@@ -28,216 +29,170 @@ public class BaseRestApiClient {
                 .build();
     }
 
-    /* =========================
-       Header Management
-       ========================= */
+    /* ==========================================================
+       Header handling
+       ========================================================== */
 
-    /**
-     * Merge default headers + custom headers + accept override.
-     * Priority:
-     * 1. acceptOverride (highest)
-     * 2. customHeaders (overrides defaults)
-     * 3. default headers (from builder)
-
-     * Note: This uses overwrite-per-header-key semantics (target.put).
-     */
     private void applyHeaders(HttpHeaders target, HttpHeaders custom, MediaType acceptOverride) {
 
-        // Apply custom headers (overwrite per key), defensively copying values
-        if (custom != null && !custom.isEmpty()) {
-            custom.forEach((key, values) -> target.put(key, new ArrayList<>(values)));
-        }
+        if (custom != null && !custom.isEmpty()) custom.forEach((k, v) -> target.put(k, new ArrayList<>(v)));
 
-        // Accept override has the highest priority
-        if (acceptOverride != null) {
-            target.setAccept(List.of(acceptOverride));
+        if (acceptOverride != null) target.setAccept(List.of(acceptOverride));
+
+    }
+
+    /* ==========================================================
+       Core request builder
+       ========================================================== */
+
+    private <R> RestClient.RequestBodySpec buildRequest(HttpMethod method, String url, R body,
+                                                        MediaType contentType, MediaType accept, HttpHeaders headers) {
+
+        RestClient.RequestBodySpec spec = restClient.method(method).uri(url).headers(h -> applyHeaders(h, headers, accept));
+
+        if (contentType != null) spec.contentType(contentType);
+        if (body != null) spec.body(body);
+
+        return spec;
+    }
+
+    /* ==========================================================
+       Core executor (single choke point)
+       ========================================================== */
+
+    private <T, R> T execute(HttpMethod method, String url, R body,
+                             MediaType contentType, MediaType accept, HttpHeaders headers,
+                             Function<RestClient.ResponseSpec, T> extractor) {
+        try {
+            RestClient.ResponseSpec responseSpec = buildRequest(method, url, body, contentType, accept, headers).retrieve();
+
+            return extractor.apply(responseSpec);
+
+        } catch (RestClientException e) {
+            throw toDomainException(e, method, url);
         }
     }
 
-    /* =========================
+    /* ==========================================================
        GET
-       ========================= */
+       ========================================================== */
 
+    public <T> T get(String url, Class<T> responseType) {
+        return get(url, responseType, null);
+    }
 
-/* =========================
-   Bodiless helpers
-   ========================= */
-
-    public void getBodiless(String url, MediaType accept, HttpHeaders customHeaders) {
-        try {
-            restClient.get()
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, accept))
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientException e) {
-            throw toDomainException(e, HttpMethod.GET, url);
+    public <T> T get(String url, Class<T> responseType, HttpHeaders headers) {
+        // if caller uses Void.class, treat as bodiless
+        if (responseType == Void.class) {
+            getBodiless(url, null, headers);
+            return null;
         }
+
+        return execute(HttpMethod.GET, url, null, null, null,
+                headers, rs -> rs.body(responseType));
+    }
+
+    public <T> T get(String url, ParameterizedTypeReference<@NonNull T> responseType) {
+        return get(url, responseType, null);
+    }
+
+    public <T> T get(String url, ParameterizedTypeReference<@NonNull T> responseType, HttpHeaders headers) {
+        return execute(
+                HttpMethod.GET, url, null, null, null, headers,
+                rs -> rs.body(responseType)
+        );
+    }
+
+    public <T> ResponseEntity<@NonNull T> getEntity(
+            String url,
+            Class<T> responseType,
+            HttpHeaders headers
+    ) {
+        return execute(
+                HttpMethod.GET, url, null, null, null, headers,
+                rs -> rs.toEntity(responseType)
+        );
     }
 
     public void getBodiless(String url) {
         getBodiless(url, null, null);
     }
 
-    public <R> void postJsonBodiless(String url, R body, HttpHeaders customHeaders) {
-        exchangeEntityWithBody(
-                HttpMethod.POST,
-                url,
-                body,
-                MediaType.APPLICATION_JSON,
-                MediaType.APPLICATION_JSON,
-                Void.class,
-                customHeaders
+    public void getBodiless(String url, MediaType accept, HttpHeaders headers) {
+        execute(
+                HttpMethod.GET, url, null, null, accept, headers,
+                rs -> {
+                    rs.toBodilessEntity();
+                    return null;
+                }
         );
     }
 
-    public <R> void postJsonBodiless(String url, R body) {
-        postJsonBodiless(url, body, null);
-    }
 
-    public void getWithBasicAuthBodiless(String url, String username, String password, MediaType accept) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(username, password, java.nio.charset.StandardCharsets.UTF_8);
-        getBodiless(url, accept, headers);
-    }
-
-    public <T> T get(String url, Class<T> responseType) {
-        return get(url, responseType, null);
-    }
-
-    public <T> T get(String url, Class<T> responseType, HttpHeaders customHeaders) {
-        try {
-            return restClient.get()
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, null))
-                    .retrieve()
-                    .body(responseType);
-        } catch (RestClientException e) {
-            throw toDomainException(e, HttpMethod.GET, url);
-        }
-    }
-
-    public <T> T get(String url, ParameterizedTypeReference<@NonNull T> responseType, HttpHeaders customHeaders) {
-        try {
-            return restClient.get()
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, null))
-                    .retrieve()
-                    .body(responseType);
-        } catch (RestClientException e) {
-            throw toDomainException(e, HttpMethod.GET, url);
-        }
-    }
-
-    public <T> T get(String url, ParameterizedTypeReference<@NonNull T> responseType) {
-        return get(url, responseType, null);
-    }
-        public <T> ResponseEntity<@NonNull T> getEntity(String url, Class<T> responseType, HttpHeaders customHeaders) {
-        try {
-            return restClient.get()
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, null))
-                    .retrieve()
-                    .toEntity(responseType);
-        } catch (RestClientException e) {
-            throw toDomainException(e, HttpMethod.GET, url);
-        }
-    }
-
-    /* =========================
+    /* ==========================================================
        Generic exchange (with body)
-       ========================= */
+       ========================================================== */
 
     public <T, R> T exchangeWithBody(
             HttpMethod method,
             String url,
-            R requestBody,
-            MediaType contentType,      // what we're sending
-            MediaType accept,           // what we want back (null = default)
+            R body,
+            MediaType contentType,
+            MediaType accept,
             Class<T> responseType,
-            HttpHeaders customHeaders
+            HttpHeaders headers
     ) {
-        try {
-            RestClient.RequestBodySpec spec = restClient
-                    .method(method)
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, accept));
-
-            if (contentType != null) {
-                spec.contentType(contentType);
-            }
-            if (requestBody != null) {
-                spec.body(requestBody);
-            }
-
-            return spec.retrieve().body(responseType);
-
-        } catch (RestClientException e) {
-            throw toDomainException(e, method, url);
+        // Optional nicety: if caller uses Void.class, treat as bodiless
+        if (responseType == Void.class) {
+            execute(
+                    method, url, body, contentType, accept, headers,
+                    rs -> {
+                        rs.toBodilessEntity();
+                        return null;
+                    }
+            );
+            return null;
         }
+
+        return execute(
+                method, url, body, contentType, accept, headers,
+                rs -> rs.body(responseType)
+        );
     }
 
     public <T, R> T exchangeWithBody(
             HttpMethod method,
             String url,
-            R requestBody,
+            R body,
             MediaType contentType,
             MediaType accept,
             ParameterizedTypeReference<@NonNull T> responseType,
-            HttpHeaders customHeaders
+            HttpHeaders headers
     ) {
-        try {
-            RestClient.RequestBodySpec spec = restClient
-                    .method(method)
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, accept));
-
-            if (contentType != null) {
-                spec.contentType(contentType);
-            }
-            if (requestBody != null) {
-                spec.body(requestBody);
-            }
-
-            return spec.retrieve().body(responseType);
-
-        } catch (RestClientException e) {
-            throw toDomainException(e, method, url);
-        }
+        return execute(
+                method, url, body, contentType, accept, headers,
+                rs -> rs.body(responseType)
+        );
     }
 
     public <T, R> ResponseEntity<@NonNull T> exchangeEntityWithBody(
             HttpMethod method,
             String url,
-            R requestBody,
+            R body,
             MediaType contentType,
             MediaType accept,
             Class<T> responseType,
-            HttpHeaders customHeaders
+            HttpHeaders headers
     ) {
-        try {
-            RestClient.RequestBodySpec spec = restClient
-                    .method(method)
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, accept));
-
-            if (contentType != null) {
-                spec.contentType(contentType);
-            }
-            if (requestBody != null) {
-                spec.body(requestBody);
-            }
-
-            return spec.retrieve().toEntity(responseType);
-
-        } catch (RestClientException e) {
-            throw toDomainException(e, method, url);
-        }
+        return execute(
+                method, url, body, contentType, accept, headers,
+                rs -> rs.toEntity(responseType)
+        );
     }
 
-    /* =========================
+    /* ==========================================================
        JSON templates
-       ========================= */
+       ========================================================== */
 
     public <T, R> T postJson(String url, R body, Class<T> responseType) {
         return postJson(url, body, responseType, null);
@@ -252,6 +207,25 @@ public class BaseRestApiClient {
                 MediaType.APPLICATION_JSON,
                 responseType,
                 headers
+        );
+    }
+
+    public <R> void postJsonBodiless(String url, R body) {
+        postJsonBodiless(url, body, null);
+    }
+
+    public <R> void postJsonBodiless(String url, R body, HttpHeaders headers) {
+        execute(
+                HttpMethod.POST,
+                url,
+                body,
+                MediaType.APPLICATION_JSON,
+                MediaType.APPLICATION_JSON,
+                headers,
+                rs -> {
+                    rs.toBodilessEntity();
+                    return null;
+                }
         );
     }
 
@@ -279,9 +253,9 @@ public class BaseRestApiClient {
         );
     }
 
-    /* =========================
+    /* ==========================================================
        XML templates
-       ========================= */
+       ========================================================== */
 
     public <T, R> T postXmlReceiveJson(String url, R xmlBody, Class<T> responseType, HttpHeaders headers) {
         return exchangeWithBody(
@@ -331,57 +305,61 @@ public class BaseRestApiClient {
         );
     }
 
-    /* =========================
+    /* ==========================================================
        MULTIPART (Send form data, Receive JSON)
-       ========================= */
+       ========================================================== */
 
     public <T> T postMultipart(
             String url,
             MultiValueMap<@NonNull String, Object> parts,
             Class<T> responseType,
-            HttpHeaders customHeaders
+            HttpHeaders headers
     ) {
         Objects.requireNonNull(parts, "parts must not be null");
 
-        try {
-            return restClient.post()
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, MediaType.APPLICATION_JSON))
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(parts)
-                    .retrieve()
-                    .body(responseType);
-        } catch (RestClientException e) {
-            throw toDomainException(e, HttpMethod.POST, url);
-        }
+        return execute(
+                HttpMethod.POST,
+                url,
+                parts,
+                MediaType.MULTIPART_FORM_DATA,
+                MediaType.APPLICATION_JSON,
+                headers,
+                rs -> rs.body(responseType)
+        );
     }
 
-    /* =========================
+    /* ==========================================================
        DELETE
-       ========================= */
+       ========================================================== */
 
     public void delete(String url) {
         delete(url, null);
     }
 
-    public void delete(String url, HttpHeaders customHeaders) {
-        try {
-            restClient.delete()
-                    .uri(url)
-                    .headers(h -> applyHeaders(h, customHeaders, null))
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientException e) {
-            throw toDomainException(e, HttpMethod.DELETE, url);
-        }
+    public void delete(String url, HttpHeaders headers) {
+        execute(
+                HttpMethod.DELETE,
+                url,
+                null,
+                null,
+                null,
+                headers,
+                rs -> {
+                    rs.toBodilessEntity();
+                    return null;
+                }
+        );
     }
 
-    /* =========================
+    /* ==========================================================
        Error handling
-       ========================= */
+       ========================================================== */
 
-    private RuntimeException toDomainException(RestClientException e, HttpMethod method, String url) {
-        // IMPORTANT: HttpErrorHandler returns the exception to throw — do not ignore it.
+    private RuntimeException toDomainException(
+            RestClientException e,
+            HttpMethod method,
+            String url
+    ) {
         return HttpErrorHandler.toDomainException(e, url, method + " " + url);
     }
 }
