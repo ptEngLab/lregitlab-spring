@@ -58,6 +58,49 @@ public class BaseRestApiClient {
        GET
        ========================= */
 
+
+/* =========================
+   Bodiless helpers
+   ========================= */
+
+    public void getBodiless(String url, MediaType accept, HttpHeaders customHeaders) {
+        try {
+            restClient.get()
+                    .uri(url)
+                    .headers(h -> applyHeaders(h, customHeaders, accept))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException e) {
+            throw toDomainException(e, HttpMethod.GET, url);
+        }
+    }
+
+    public void getBodiless(String url) {
+        getBodiless(url, null, null);
+    }
+
+    public <R> void postJsonBodiless(String url, R body, HttpHeaders customHeaders) {
+        exchangeEntityWithBody(
+                HttpMethod.POST,
+                url,
+                body,
+                MediaType.APPLICATION_JSON,
+                MediaType.APPLICATION_JSON,
+                Void.class,
+                customHeaders
+        );
+    }
+
+    public <R> void postJsonBodiless(String url, R body) {
+        postJsonBodiless(url, body, null);
+    }
+
+    public void getWithBasicAuthBodiless(String url, String username, String password, MediaType accept) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(username, password, java.nio.charset.StandardCharsets.UTF_8);
+        getBodiless(url, accept, headers);
+    }
+
     public <T> T get(String url, Class<T> responseType) {
         return get(url, responseType, null);
     }

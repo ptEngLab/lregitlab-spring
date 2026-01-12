@@ -1,31 +1,26 @@
 package com.lre.gitlabintegration.client.api;
 
 import com.lre.gitlabintegration.client.builder.LreAuthUrlFactory;
+import com.lre.gitlabintegration.config.http.LreApiClientBaseRestApiClient;
 import com.lre.gitlabintegration.dto.lreauth.AuthenticationRequest;
-import com.lre.gitlabintegration.util.http.HttpErrorHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-
-import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
 public class LreAuthApiClient {
 
-    private final RestClient lreRestClient;
+    private final LreApiClientBaseRestApiClient apiClient;
     private final LreAuthUrlFactory authUrlFactory;
 
     public LreAuthApiClient(
-            @Qualifier("lreRestClient") RestClient lreRestClient,
+            LreApiClientBaseRestApiClient apiClient,
             LreAuthUrlFactory authUrlFactory
     ) {
-        this.lreRestClient = lreRestClient;
+        this.apiClient = apiClient;
         this.authUrlFactory = authUrlFactory;
     }
 
@@ -37,88 +32,31 @@ public class LreAuthApiClient {
 
     public void logout() {
         String logoutUrl = authUrlFactory.getLogoutUrl();
-
-        try {
-            lreRestClient.get()
-                    .uri(logoutUrl)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .toBodilessEntity();
-
-            log.debug("Logout successful");
-        } catch (RestClientException e) {
-            HttpErrorHandler.toDomainException(
-                    e,
-                    logoutUrl,
-                    "LRE logout"
-            );
-        }
+        apiClient.getBodiless(logoutUrl); // default Accept: JSON from BaseRestApiClient
+        log.debug("Logout successful");
     }
 
     public void loginToWebProject(String domain, String project) {
         String webLoginUrl = authUrlFactory.getAuthUrlWeb(domain, project);
-
-        try {
-            lreRestClient.get()
-                    .uri(webLoginUrl)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .toBodilessEntity();
-
-            log.debug("Web login successful for project: {}/{}", domain, project);
-        } catch (RestClientException e) {
-            HttpErrorHandler.toDomainException(
-                    e,
-                    webLoginUrl,
-                    "LRE web login for project: " + domain + "/" + project
-            );
-            throw e;
-        }
+        apiClient.getBodiless(webLoginUrl);
+        log.debug("Web login successful for project: {}/{}", domain, project);
     }
 
     private boolean loginForClient(String username, String password) {
         String authUrl = authUrlFactory.getAuthUrlForClient();
 
         try {
-            AuthenticationRequest authRequest =
-                    new AuthenticationRequest(username, password);
-
-            lreRestClient.post()
-                    .uri(authUrl)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .body(authRequest)
-                    .retrieve()
-                    .toBodilessEntity();
-
+            AuthenticationRequest authRequest = new AuthenticationRequest(username, password);
+            apiClient.postJsonBodiless(authUrl, authRequest);
             log.debug("LRE authentication successful with token");
             return true;
+
         } catch (RestClientResponseException e) {
             if (isAuthFailure(e.getStatusCode())) {
-                log.warn(
-                        "LRE token authentication failed: {}",
-                        e.getStatusCode()
-                );
+                log.warn("LRE token authentication failed: {}", e.getStatusCode());
                 return false;
             }
-
-            HttpErrorHandler.toDomainException(
-                    e,
-                    authUrl,
-                    "LRE Token authentication"
-            );
-            throw e;
-        } catch (RestClientException e) {
-            log.error(
-                    "Token authentication failed: {}",
-                    e.getMessage()
-            );
-            HttpErrorHandler.toDomainException(
-                    e,
-                    authUrl,
-                    "LRE Token authentication"
-            );
-            throw e;
+            throw e; // already mapped by BaseRestApiClient into domain exception for other RestClientExceptions
         }
     }
 
@@ -126,45 +64,15 @@ public class LreAuthApiClient {
         String authUrl = authUrlFactory.getAuthUrlForUser();
 
         try {
-            lreRestClient.get()
-                    .uri(authUrl)
-                    .headers(h ->
-                            h.setBasicAuth(
-                                    username,
-                                    password,
-                                    StandardCharsets.UTF_8
-                            )
-                    )
-                    .retrieve()
-                    .toBodilessEntity();
-
+            apiClient.getWithBasicAuthBodiless(authUrl, username, password, MediaType.APPLICATION_JSON);
             log.debug("LRE Authentication successful with username/password");
             return true;
+
         } catch (RestClientResponseException e) {
             if (isAuthFailure(e.getStatusCode())) {
-                log.warn(
-                        "LRE basic authentication failed: {}",
-                        e.getStatusCode()
-                );
+                log.warn("LRE basic authentication failed: {}", e.getStatusCode());
                 return false;
             }
-
-            HttpErrorHandler.toDomainException(
-                    e,
-                    authUrl,
-                    "LRE basic authentication"
-            );
-            throw e;
-        } catch (RestClientException e) {
-            log.error(
-                    "Basic authentication failed: {}",
-                    e.getMessage()
-            );
-            HttpErrorHandler.toDomainException(
-                    e,
-                    authUrl,
-                    "LRE basic authentication"
-            );
             throw e;
         }
     }
