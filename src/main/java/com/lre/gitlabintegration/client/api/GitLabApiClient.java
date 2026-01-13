@@ -29,14 +29,14 @@ public class GitLabApiClient {
         this.gitLabUrlFactory = gitLabUrlFactory;
     }
 
-    public List<GitLabTreeItem> getRepositoryTree(int page, int projectId, String ref) {
+    public List<GitLabTreeItem> getRepositoryTree(int page, long projectId, String ref) {
         String url = gitLabUrlFactory.getRepositoryTreeUrl(page, projectId, ref);
         log.debug("Fetching repository tree from: {}", url);
         List<GitLabTreeItem> items = apiClient.get(url, new ParameterizedTypeReference<>() {});
         return items != null ? items : Collections.emptyList();
     }
 
-    public GitLabCommit getLatestCommitForPath(int projectId, String ref, String path) {
+    public GitLabCommit getLatestCommitForPath(long projectId, String ref, String path) {
         String url = gitLabUrlFactory.getLatestCommitUrlForPath(projectId, ref, path);
         log.debug("Fetching latest commit for path: {}", path);
 
@@ -44,7 +44,7 @@ public class GitLabApiClient {
         return (commits != null && !commits.isEmpty()) ? commits.get(0) : new GitLabCommit();
     }
 
-    public boolean downloadRepositoryArchive(int projectId, String commitSha, String path, Path destPath) {
+    public boolean downloadRepositoryArchive(long projectId, String commitSha, String path, Path destPath) {
         String url = gitLabUrlFactory.getRepositoryArchiveUrl(projectId, commitSha, path);
         log.debug("Downloading repository archive from: {}", url);
 

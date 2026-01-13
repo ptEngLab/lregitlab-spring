@@ -20,7 +20,7 @@ public class GitLabUrlFactory {
     /**
      * Get repository tree URL with pagination
      */
-    public String getRepositoryTreeUrl(int page, String ref, int projectId, String path) {
+    public String getRepositoryTreeUrl(int page, String ref, long projectId, String path) {
         return UriComponentsBuilder
                 .fromPath("projects/{projectId}/repository/tree")
                 .queryParam("ref", ref)
@@ -32,7 +32,7 @@ public class GitLabUrlFactory {
                 .toUriString();
     }
 
-    public String getRepositoryTreeUrl(int page, int projectId, String ref) {
+    public String getRepositoryTreeUrl(int page, long projectId, String ref) {
         return getRepositoryTreeUrl(page, ref, projectId, null);
     }
 
@@ -49,7 +49,7 @@ public class GitLabUrlFactory {
     /**
      * Get latest commit URL for a specific path
      */
-    public String getLatestCommitUrlForPath(int projectId, String ref, String path) {
+    public String getLatestCommitUrlForPath(long projectId, String ref, String path) {
         return UriComponentsBuilder
                 .fromPath("projects/{projectId}/repository/commits")
                 .queryParam("ref_name", ref)
@@ -62,7 +62,7 @@ public class GitLabUrlFactory {
     /**
      * Get repository archive URL
      */
-    public String getRepositoryArchiveUrl(int projectId, String commitSha, String path) {
+    public String getRepositoryArchiveUrl(long projectId, String commitSha, String path) {
         return UriComponentsBuilder
                 .fromPath("projects/{projectId}/repository/archive.zip")
                 .queryParamIfPresent("path", Optional.ofNullable(path))

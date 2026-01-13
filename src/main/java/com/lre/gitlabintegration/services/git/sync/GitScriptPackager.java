@@ -27,7 +27,7 @@ public class GitScriptPackager {
     public record PackagedScript(Path zipPath, Path tempDir) {
     }
 
-    public PackagedScript prepare(int projectId, GitLabCommit commit) throws IOException {
+    public PackagedScript prepare(long projectId, GitLabCommit commit) throws IOException {
 
         Files.createDirectories(rootSyncDir);
 

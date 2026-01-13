@@ -31,7 +31,7 @@ public class GitRepositoryScanner {
         this.gitlabPerPageRecords = gitLabProperties.getPerPageRecords();
     }
 
-    public List<GitLabCommit> scanScripts(int projectId, String ref) {
+    public List<GitLabCommit> scanScripts(long projectId, String ref) {
         Set<String> scriptDirs = findScriptDirectories(projectId, ref);
         log.debug("Found {} scripts", scriptDirs.size());
 
@@ -65,7 +65,7 @@ public class GitRepositoryScanner {
         }
     }
 
-    private GitLabCommit fetchCommitForPath(int projectId, String ref, String path) {
+    private GitLabCommit fetchCommitForPath(long projectId, String ref, String path) {
         GitLabCommit commit = gitLabApiClient.getLatestCommitForPath(projectId, ref, path);
         if (!commit.isEmpty()) {
             commit.setPath(path);
@@ -73,7 +73,7 @@ public class GitRepositoryScanner {
         return commit;
     }
 
-    private Set<String> findScriptDirectories(int projectId, String ref) {
+    private Set<String> findScriptDirectories(long projectId, String ref) {
         List<GitLabTreeItem> allItems = scanEntireRepository(projectId, ref);
         return allItems.stream()
                 .filter(i ->
@@ -85,7 +85,7 @@ public class GitRepositoryScanner {
                 .collect(Collectors.toSet());
     }
 
-    private List<GitLabTreeItem> scanEntireRepository(int projectId, String ref) {
+    private List<GitLabTreeItem> scanEntireRepository(long projectId, String ref) {
         List<GitLabTreeItem> all = new ArrayList<>();
         int page = 1;
 
