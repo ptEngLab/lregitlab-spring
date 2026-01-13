@@ -76,6 +76,18 @@ public class RestClientConfig {
                 .build();
     }
 
+    @Bean
+    public RestClient gitlabJobTokenRestClient() {
+        // Same base URL + same HTTP client config, but NO default auth header
+        HttpComponentsClientHttpRequestFactory factory = getHttpRequestFactory(sslContext, false);
+
+        return RestClient.builder()
+                .requestFactory(factory)
+                .baseUrl(gitLabProperties.getUrl())
+                .build();
+    }
+
+
     private HttpComponentsClientHttpRequestFactory getHttpRequestFactory(SSLContext sslContext, boolean enableCookies) {
         HttpClient httpClient = buildHttpClient(sslContext, enableCookies);
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);

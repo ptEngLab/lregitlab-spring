@@ -1,7 +1,5 @@
 package com.lre.gitlabintegration.dto.sync;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,15 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SyncRequest {
 
-    @NotNull(message = "GitLab project ID is required")
-    private Integer gitlabProjectId;
-
-    @NotBlank(message = "Git ref (branch/tag) is required")
+    private Long gitlabProjectId;
+    private Long gitlabUserId;
     private String ref;
-
-    @NotBlank(message = "LRE domain is required")
     private String lreDomain;
-
-    @NotBlank(message = "LRE project is required")
     private String lreProject;
 }

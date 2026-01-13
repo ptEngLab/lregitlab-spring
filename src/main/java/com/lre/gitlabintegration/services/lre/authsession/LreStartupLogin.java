@@ -20,7 +20,7 @@ public class LreStartupLogin {
             boolean loggedIn = loginManager.ensureLoggedIn();
             log.info("LRE Startup login {}", loggedIn ? "successful" : "already logged in");
         } catch (Exception e) {
-            log.error("LRE start up login failed (will retry on demand)", e);
+            log.error("LRE start up login failed (will retry on demand).");
         }
     }
 }
