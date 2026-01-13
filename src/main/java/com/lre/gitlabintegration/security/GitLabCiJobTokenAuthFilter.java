@@ -1,11 +1,13 @@
 package com.lre.gitlabintegration.security;
 
 import com.lre.gitlabintegration.client.api.GitLabJobTokenApiClient;
+import com.lre.gitlabintegration.exceptions.AuthException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,22 +30,26 @@ public class GitLabCiJobTokenAuthFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain chain) throws IOException, ServletException {
 
         String token = request.getHeader("JOB-TOKEN");
-        if (token == null || token.isBlank()) {
-            response.sendError(401, "Missing JOB-TOKEN");
-            return;
-        }
+        if (token == null || token.isBlank()) throw new AuthException("Missing JOB-TOKEN", HttpStatus.UNAUTHORIZED);
+
 
         GitLabJobTokenApiClient.GitLabJobInfo job;
         try {
             job = jobClient.getCurrentJob(token);
         } catch (Exception ex) {
-            response.sendError(401, "Invalid CI job token");
-            return;
+            throw new AuthException("Invalid CI Job token", HttpStatus.UNAUTHORIZED);
         }
 
+        var auth = getUsernamePasswordAuthenticationToken(job);
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        chain.doFilter(request, response);
+    }
+
+    private static UsernamePasswordAuthenticationToken getUsernamePasswordAuthenticationToken(GitLabJobTokenApiClient.GitLabJobInfo job) {
         if (job == null || job.user() == null || job.project() == null) {
-            response.sendError(401, "Could not resolve CI identity");
-            return;
+            throw new AuthException("Could not resolve CI identity", HttpStatus.UNAUTHORIZED);
         }
 
         var principal = new GitLabCiPrincipal(
@@ -54,11 +60,11 @@ public class GitLabCiJobTokenAuthFilter extends OncePerRequestFilter {
                 Boolean.TRUE.equals(job.tag())
         );
 
-        var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of(new SimpleGrantedAuthority("ROLE_CI")));
+        return new UsernamePasswordAuthenticationToken(principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_CI"))
+        );
 
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        chain.doFilter(request, response);
     }
 
     public record GitLabCiPrincipal(long gitlabProjectId, long gitlabUserId, String username, String ref, boolean tag) {
