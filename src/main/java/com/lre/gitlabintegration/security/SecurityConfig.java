@@ -15,21 +15,23 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             GitLabJobTokenApiClient jobClient,
-                                            ObjectMapper objectMapper) {
+                                            ObjectMapper objectMapper)  {
+
+        var entryPoint = new JsonAuthenticationEntryPoint(objectMapper);
+
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new JsonAuthenticationEntryPoint(objectMapper))
+                        .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(new JsonAccessDeniedHandler(objectMapper))
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(
-                        new GitLabCiJobTokenAuthFilter(jobClient),
-                        UsernamePasswordAuthenticationFilter.class
-                )
+                .addFilterBefore(new GitLabCiJobTokenAuthFilter(jobClient, entryPoint),
+                        UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }
+
