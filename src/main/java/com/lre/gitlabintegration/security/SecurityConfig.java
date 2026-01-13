@@ -1,5 +1,6 @@
 package com.lre.gitlabintegration.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lre.gitlabintegration.client.api.GitLabJobTokenApiClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,14 +13,23 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, GitLabJobTokenApiClient jobClient) {
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            GitLabJobTokenApiClient jobClient,
+                                            ObjectMapper objectMapper) {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new JsonAuthenticationEntryPoint(objectMapper))
+                        .accessDeniedHandler(new JsonAccessDeniedHandler(objectMapper))
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new GitLabCiJobTokenAuthFilter(jobClient), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new GitLabCiJobTokenAuthFilter(jobClient),
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .build();
     }
 }
