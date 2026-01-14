@@ -1,5 +1,7 @@
 package com.lre.gitlabintegration.client.api;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.lre.gitlabintegration.client.builder.GitLabUrlFactory;
 import com.lre.gitlabintegration.config.http.BaseRestApiClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -10,19 +12,26 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 public class GitLabJobTokenApiClient extends BaseRestApiClient {
 
-    public GitLabJobTokenApiClient(RestClient gitlabJobTokenRestClient) {
+    private final GitLabUrlFactory gitLabUrlFactory;
+
+    public GitLabJobTokenApiClient(RestClient gitlabJobTokenRestClient, GitLabUrlFactory gitLabUrlFactory) {
         super(gitlabJobTokenRestClient);
+        this.gitLabUrlFactory = gitLabUrlFactory;
     }
 
-    public GitLabJobInfo getCurrentJob(String jobToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("JOB-TOKEN", jobToken);
-        return get("/api/v4/job", GitLabJobInfo.class, headers);
+    public GitLabJobInfo getCurrentJob(HttpHeaders headers) {
+        String url = gitLabUrlFactory.getJobUrl();
+        return get(url, GitLabJobInfo.class, headers);
     }
 
-    public record GitLabJobInfo(GitLabUser user, GitLabProject project, String ref, Boolean tag) { }
+    public record GitLabJobInfo(GitLabUser user, GitLabPipeline pipeline, String ref, Boolean tag) {
+    }
 
-    public record GitLabUser(long id, String username) { }
+    public record GitLabUser(long id, String username, String name) {
+    }
 
-    public record GitLabProject(long id) { }
+    public record GitLabPipeline(long id,
+                                 @JsonProperty("project_id") long projectId,
+                                 @JsonProperty("web_url") String webUrl) {
+    }
 }

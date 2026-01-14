@@ -25,35 +25,34 @@ public class SyncController {
     private final GitSyncService gitSyncService;
     private final LreAuthorizationService lreAuthorizationService;
 
-    @PostMapping("/{domain}/{project}/sync")
+    @PostMapping("/domain/{domain}/project/{project}/sync")
     public ResponseEntity<@NonNull SyncResponse> sync(
             @NonNull @PathVariable String domain,
             @NonNull @PathVariable String project,
             @NonNull Authentication authentication
     ) {
+
         if (!(authentication.getPrincipal() instanceof GitLabCiJobTokenAuthFilter.GitLabCiPrincipal principal)) {
             throw new AccessDeniedException("Invalid principal type");
         }
 
-        // Authorize BEFORE doing any heavy work
-        lreAuthorizationService.assertAllowed(
-                principal.gitlabProjectId(),
-                principal.gitlabUserId(),
-                domain,
-                project
-        );
+        domain = domain.trim();
+        project = project.trim();
 
-        // Build a trusted SyncRequest for downstream code
+        String username = principal.gitlabUsername().trim();
+        if (username.isEmpty()) throw new AccessDeniedException("Missing username");
+
+        lreAuthorizationService.assertUserHasProjectAccess(username, domain, project);
+
         SyncRequest request = new SyncRequest(
                 principal.gitlabProjectId(),
-                principal.gitlabUserId(),
                 principal.ref(),
                 domain,
                 project
         );
 
-        log.info("Sync request: gitlabProjectId={}, gitlabUserId={}, lreDomain={}, lreProject={}, ref={}",
-                principal.gitlabProjectId(), principal.gitlabUserId(), domain, project, principal.ref());
+        log.info("Sync request: gitlabProjectId={}, lreDomain={}, lreProject={}, ref={}",
+                principal.gitlabProjectId(), domain, project, principal.ref());
 
         SyncResponse response = gitSyncService.sync(request);
 
@@ -61,5 +60,4 @@ public class SyncController {
                 ? ResponseEntity.ok(response)
                 : ResponseEntity.badRequest().body(response);
     }
-
 }

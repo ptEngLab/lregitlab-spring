@@ -1,24 +1,28 @@
 package com.lre.gitlabintegration.client.api;
 
-import com.lre.gitlabintegration.client.builder.LreAuthUrlFactory;
+import com.lre.gitlabintegration.client.builder.LreAdminUrlFactory;
 import com.lre.gitlabintegration.config.http.LreApiClientBaseRestApiClient;
 import com.lre.gitlabintegration.dto.lreauth.AuthenticationRequest;
+import com.lre.gitlabintegration.dto.lreuser.LreUserDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
-@Service
-@Slf4j
 @RequiredArgsConstructor
-public class LreAuthApiClient {
-
+@Slf4j
+@Service
+public class LreAdminApiClient {
     private final LreApiClientBaseRestApiClient apiClient;
-    private final LreAuthUrlFactory authUrlFactory;
+    private final LreAdminUrlFactory lreAdminUrlFactory;
+
 
     public boolean login(String username, String password, boolean authenticateWithToken) {
         return authenticateWithToken
@@ -27,19 +31,21 @@ public class LreAuthApiClient {
     }
 
     public void logout() {
-        String logoutUrl = authUrlFactory.getLogoutUrl();
-        apiClient.getBodiless(logoutUrl); // default Accept: JSON from BaseRestApiClient
+        String logoutUrl = lreAdminUrlFactory.getLogoutUrl();
+        apiClient.getBodiless(logoutUrl);
         log.debug("Logout successful");
     }
 
-    public void loginToWebProject(String domain, String project) {
-        String webLoginUrl = authUrlFactory.getAuthUrlWeb(domain, project);
-        apiClient.getBodiless(webLoginUrl);
-        log.debug("Web login successful for project: {}/{}", domain, project);
+    public List<LreUserDto> getUsersWithRoles() {
+        String url = lreAdminUrlFactory.getUsersUrl();
+        log.debug("Fetching users from LRE: {}", url);
+        List<LreUserDto> users = apiClient.get(url, new ParameterizedTypeReference<>() {});
+        return users != null ? users : Collections.emptyList();
     }
 
+
     private boolean loginForClient(String username, String password) {
-        String authUrl = authUrlFactory.getAuthUrlForClient();
+        String authUrl = lreAdminUrlFactory.getAuthUrlForClient();
 
         try {
             AuthenticationRequest authRequest = new AuthenticationRequest(username, password);
@@ -57,7 +63,7 @@ public class LreAuthApiClient {
     }
 
     private boolean loginForUser(String username, String password) {
-        String authUrl = authUrlFactory.getAuthUrlForUser();
+        String authUrl = lreAdminUrlFactory.getAuthUrlForUser();
 
         try {
             HttpHeaders headers = new HttpHeaders();

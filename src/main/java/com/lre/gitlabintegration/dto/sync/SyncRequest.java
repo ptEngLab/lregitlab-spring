@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 public class SyncRequest {
 
     private Long gitlabProjectId;
-    private Long gitlabUserId;
     private String ref;
     private String lreDomain;
     private String lreProject;

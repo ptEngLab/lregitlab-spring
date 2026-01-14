@@ -1,24 +1,20 @@
 package com.lre.gitlabintegration.services.security;
 
-import com.lre.gitlabintegration.repository.AllowedLreAccessRepository;
+
+import com.lre.gitlabintegration.repository.LreAuthorizationRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
 public class LreAuthorizationService {
 
-    private final AllowedLreAccessRepository repo;
+    private final LreAuthorizationRepository repo;
 
-    public void assertAllowed(long gitlabProjectId, long gitlabUserId, String domain, String project) {
-        if (domain == null || project == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Path variables 'domain' and 'project' are required");
-        }
-
-        if (!repo.isAllowed(gitlabProjectId, gitlabUserId, domain, project)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed for this domain/project");
+    public void assertUserHasProjectAccess(String gitlabUsername, String domain, String project) {
+        if (!repo.isUserActiveAndHasAccess(gitlabUsername, domain, project)) {
+            throw new AccessDeniedException("User is not authorized for this LRE project");
         }
     }
 }

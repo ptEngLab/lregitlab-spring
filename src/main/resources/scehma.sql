@@ -1,14 +1,34 @@
-CREATE TABLE IF NOT EXISTS allowed_lre_access (
-  gitlab_project_id INTEGER NOT NULL,
-  gitlab_user_id    INTEGER NOT NULL,
-  lre_domain        TEXT NOT NULL,
-  lre_project       TEXT NOT NULL,
-  enabled           INTEGER NOT NULL DEFAULT 1,
-  PRIMARY KEY (gitlab_project_id, gitlab_user_id, lre_domain, lre_project)
+
+PRAGMA foreign_keys = ON;
+
+-- LRE users
+CREATE TABLE lre_user (
+  lre_user_id        INTEGER PRIMARY KEY,
+  lre_username       TEXT NOT NULL COLLATE NOCASE,
+  full_name          TEXT,
+  status             TEXT NOT NULL COLLATE NOCASE,
+  last_update_date   TEXT,
+  email              TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_allowed_lre_access_project
-  ON allowed_lre_access(gitlab_project_id);
+-- Case-insensitive uniqueness
+CREATE UNIQUE INDEX idx_lre_user_username
+  ON lre_user(lre_username);
 
-CREATE INDEX IF NOT EXISTS idx_allowed_lre_access_user
-  ON allowed_lre_access(gitlab_user_id);
+
+-- LRE roles
+CREATE TABLE lre_user_role (
+  lre_user_id   INTEGER NOT NULL,
+  domain        TEXT NOT NULL COLLATE NOCASE,
+  project_name  TEXT NOT NULL COLLATE NOCASE,
+  project_id    INTEGER,
+  role          TEXT NOT NULL COLLATE NOCASE,
+  PRIMARY KEY (lre_user_id, domain, project_name, role),
+  FOREIGN KEY (lre_user_id)
+    REFERENCES lre_user(lre_user_id)
+    ON DELETE CASCADE
+);
+
+-- Supports lookups by domain + project + user
+CREATE INDEX idx_lre_role_lookup
+  ON lre_user_role(domain, project_name, lre_user_id);

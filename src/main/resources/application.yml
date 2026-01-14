@@ -3,7 +3,7 @@ spring:
     name: lre-gitlab
 
   datasource:
-    url: jdbc:sqlite:db/lre-gitlab.db
+    url: jdbc:sqlite:db/lre-gitlab.db?foreign_keys=on
     driver-class-name: org.sqlite.JDBC
 
   sql:
@@ -32,6 +32,10 @@ lre:
   session-ttl: PT10M
   failure-backoff: PT5M
   max-consecutive-failures: 3
+
+  user-role-sync:
+    initial-delay-ms: 5000
+    fixed-delay-ms: 600000   # 10 minutes
 
 http:
   connection:

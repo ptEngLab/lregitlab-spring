@@ -37,11 +37,11 @@ public class GitLabUrlFactory {
     }
 
     /**
-     * Get current user URL
+     * Get current job URL
      */
-    public String getCurrentUserUrl() {
+    public String getJobUrl() {
         return UriComponentsBuilder
-                .fromPath("user")
+                .fromPath("job")
                 .build()
                 .toUriString();
     }
