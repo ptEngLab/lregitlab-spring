@@ -3,6 +3,7 @@ package com.lre.gitlabintegration.client.api;
 import com.lre.gitlabintegration.client.builder.GitLabUrlFactory;
 import com.lre.gitlabintegration.config.http.GitLabBaseApiClient;
 import com.lre.gitlabintegration.dto.gitlab.GitLabCommit;
+import com.lre.gitlabintegration.dto.gitlab.GitLabProjectInfo;
 import com.lre.gitlabintegration.dto.gitlab.GitLabTreeItem;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -42,6 +43,12 @@ public class GitLabApiClient {
 
         List<GitLabCommit> commits = apiClient.get(url, new ParameterizedTypeReference<>() {});
         return (commits != null && !commits.isEmpty()) ? commits.get(0) : new GitLabCommit();
+    }
+
+    public GitLabProjectInfo getProjectInfo(long projectId) {
+        String url = gitLabUrlFactory.getProjectUrl(projectId);
+        log.debug("Fetching project info from: {}", url);
+        return apiClient.get(url, GitLabProjectInfo.class);
     }
 
     public boolean downloadRepositoryArchive(long projectId, String commitSha, String path, Path destPath) {

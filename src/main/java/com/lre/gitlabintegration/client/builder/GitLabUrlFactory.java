@@ -47,6 +47,16 @@ public class GitLabUrlFactory {
     }
 
     /**
+     * Get Project URL
+     */
+    public String getProjectUrl(long projectId) {
+        return UriComponentsBuilder
+                .fromPath("projects/{projectId}")
+                .buildAndExpand(projectId)
+                .toUriString();
+    }
+
+    /**
      * Get latest commit URL for a specific path
      */
     public String getLatestCommitUrlForPath(long projectId, String ref, String path) {
@@ -70,4 +80,6 @@ public class GitLabUrlFactory {
                 .buildAndExpand(projectId)
                 .toUriString();
     }
+
+
 }

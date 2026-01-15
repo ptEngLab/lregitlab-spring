@@ -82,7 +82,7 @@ public class SyncResponseBuilder {
         );
 
         return SyncResponse.builder()
-                .success(true)
+                .success(false)
                 .summary(summary)
                 .changes(changes)
                 .build();
