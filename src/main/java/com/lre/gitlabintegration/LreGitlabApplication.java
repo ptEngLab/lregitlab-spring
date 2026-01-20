@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @EnableScheduling
-public class LreGitApplication {
+public class LreGitlabApplication {
     public static void main(String[] args) {
-        SpringApplication.run(LreGitApplication.class, args);
+        SpringApplication.run(LreGitlabApplication.class, args);
     }
 }
