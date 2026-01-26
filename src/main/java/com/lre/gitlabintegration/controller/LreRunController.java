@@ -82,4 +82,23 @@ public class LreRunController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(downloadable.body());
     }
+
+    @GetMapping("/{runId}/results/{resultId}/download-ui")
+    public ResponseEntity<@NonNull StreamingResponseBody> downloadRunResultFileViaUi(
+            @PathVariable String domain,
+            @PathVariable String project,
+            @PathVariable @Min(1) int runId,
+            @PathVariable @Min(1) int resultId,
+            @AuthenticationPrincipal GitLabCiPrincipal principal
+    ) {
+        DownloadableStream downloadable =
+                orchestrationService.downloadRunResultViaUi(domain, project, runId, resultId, principal);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        fileDownloadService.contentDisposition(downloadable.fileName()))
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(downloadable.body());
+    }
+
 }

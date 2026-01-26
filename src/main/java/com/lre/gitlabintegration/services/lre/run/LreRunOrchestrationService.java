@@ -37,4 +37,20 @@ public class LreRunOrchestrationService {
         return new DownloadableStream(body, fileName);
     }
 
+    public DownloadableStream downloadRunResultViaUi(
+            String domain, String project, int runId, int resultId, GitLabCiPrincipal principal
+    ) {
+        AuditContext ctx = authGuard.requireProjectAccess(domain, project, principal);
+        LreSessionManager.ensureAuthenticated(ctx.domain(), ctx.project());
+
+        String fileName = "lre-result-" + runId + "-" + resultId + ".bin";
+
+        StreamingResponseBody body = out -> {
+            runApiClient.streamDownloadResultViaUi(ctx.domain(), ctx.project(), resultId, out);
+            out.flush();
+        };
+
+        return new DownloadableStream(body, fileName);
+    }
+
 }

@@ -1,9 +1,14 @@
 package com.lre.gitlabintegration.client.api;
 
 import com.lre.gitlabintegration.config.http.LreApiClientBaseRestApiClient;
+import com.lre.gitlabintegration.dto.lrescript.WebFormsTokenParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+
+import java.io.OutputStream;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -53,5 +58,25 @@ public class RunApiClient {
         log.debug("Fetching run status for run ID: {}", runId);
         String url = urlFactory.getRunStatusUrl(domainName, projectName, runId);
         return apiClient.get(url, RunStatus.class);
+    }
+
+
+    public void streamDownloadResultViaUi(String domain, String project, int resultId, OutputStream out) {
+
+        // 1) GET the dialog page (HTML)
+        String getUrl = urlFactory.getDownloadResultDialogUrl(resultId);
+        HttpHeaders htmlHeaders = fileDownloadService.createHtmlHeaders();
+        String html = apiClient.get(getUrl, String.class, htmlHeaders);
+
+        // 2) Parse WebForms hidden fields
+        Map<String, String> tokens = WebFormsTokenParser.parse(html);
+
+        // 3) POST form (this triggers actual download)
+        String postUrl = urlFactory.getDownloadResultDialogPostUrl();
+        HttpHeaders formHeaders = fileDownloadService.createFormPostHeaders();
+
+        Map<String, String> form = WebFormsTokenParser.buildDownloadOkForm(tokens, resultId);
+
+        apiClient.postFormAndStream(postUrl, form, out, formHeaders);
     }
 }

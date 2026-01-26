@@ -5,6 +5,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -15,6 +16,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -378,9 +380,6 @@ public class BaseRestApiClient {
                         }
 
                         try (InputStream inputStream = res.getBody()) {
-                            if (inputStream == null) {
-                                throw new IOException("Empty response body for: " + url);
-                            }
                             inputStream.transferTo(out);
                             out.flush();
                             return null;
@@ -399,5 +398,40 @@ public class BaseRestApiClient {
             throw HttpErrorHandler.toDomainException(e, url, "GET " + url);
         }
     }
+
+    public void postFormAndStream(String url, Map<String, String> form, OutputStream out, HttpHeaders headers) {
+        Objects.requireNonNull(out, "OutputStream must not be null");
+
+        MultiValueMap<@NonNull String, String> body = new LinkedMultiValueMap<>();
+        form.forEach(body::add);
+
+        try {
+            buildRequest(HttpMethod.POST, url, body, MediaType.APPLICATION_FORM_URLENCODED, MediaType.ALL, headers)
+                    .exchange((req, res) -> {
+
+                        if (!res.getStatusCode().is2xxSuccessful() && !res.getStatusCode().is3xxRedirection()) {
+                            throw new RestClientException("Non-2xx/3xx response: " + res.getStatusCode());
+                        }
+                        try (InputStream in = res.getBody()) {
+                            in.transferTo(out);
+                            out.flush();
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+
+                        return null;
+                    });
+
+        } catch (UncheckedIOException e) {
+            throw HttpErrorHandler.toDomainException(
+                    new RestClientException("Form stream transfer failed", e.getCause()),
+                    url,
+                    "POST " + url
+            );
+        } catch (RestClientException e) {
+            throw HttpErrorHandler.toDomainException(e, url, "POST " + url);
+        }
+    }
+
 
 }
