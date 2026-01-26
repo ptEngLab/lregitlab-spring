@@ -1,10 +1,10 @@
 package com.lre.gitlabintegration.dto.audit;
 
 import com.lre.gitlabintegration.dto.gitlab.GitLabProjectInfo;
-import com.lre.gitlabintegration.security.GitLabCiJobTokenAuthFilter;
+import com.lre.gitlabintegration.security.GitLabCiPrincipal;
 
 public record AuditContext(
-        GitLabCiJobTokenAuthFilter.GitLabCiPrincipal principal,
+        GitLabCiPrincipal principal,
         GitLabProjectInfo projectInfo,
         String username,
         String domain,

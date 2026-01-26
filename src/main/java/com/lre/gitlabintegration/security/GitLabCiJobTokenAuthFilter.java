@@ -99,13 +99,4 @@ public class GitLabCiJobTokenAuthFilter extends OncePerRequestFilter {
         );
     }
 
-    public record GitLabCiPrincipal(
-            long gitlabUserId,
-            String gitlabUsername,
-            long gitlabProjectId,
-            String webUrl,
-            String ref,
-            boolean tag
-    ) {
-    }
 }

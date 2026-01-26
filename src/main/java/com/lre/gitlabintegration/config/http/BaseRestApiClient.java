@@ -4,14 +4,15 @@ import com.lre.gitlabintegration.util.http.HttpErrorHandler;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -362,4 +363,41 @@ public class BaseRestApiClient {
     ) {
         return HttpErrorHandler.toDomainException(e, url, method + " " + url);
     }
+
+
+    public void streamTo(String url, OutputStream out, MediaType accept, HttpHeaders headers) {
+        Objects.requireNonNull(out, "OutputStream must not be null");
+
+        try {
+            buildRequest(HttpMethod.GET, url, null, null, accept, headers)
+                    .exchange((HttpRequest req, RestClient.RequestHeadersSpec.ConvertibleClientHttpResponse res) -> {
+
+                        // IMPORTANT: exchange() does NOT throw on non-2xx
+                        if (!res.getStatusCode().is2xxSuccessful()) {
+                            throw new RestClientException("Non-2xx response: " + res.getStatusCode());
+                        }
+
+                        try (InputStream inputStream = res.getBody()) {
+                            if (inputStream == null) {
+                                throw new IOException("Empty response body for: " + url);
+                            }
+                            inputStream.transferTo(out);
+                            out.flush();
+                            return null;
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+
+        } catch (UncheckedIOException e) {
+            throw HttpErrorHandler.toDomainException(
+                    new RestClientException("Stream transfer failed", e.getCause()),
+                    url,
+                    "GET " + url
+            );
+        } catch (RestClientException e) {
+            throw HttpErrorHandler.toDomainException(e, url, "GET " + url);
+        }
+    }
+
 }

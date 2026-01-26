@@ -6,7 +6,7 @@ import com.lre.gitlabintegration.dto.gitlab.GitLabProjectInfo;
 import com.lre.gitlabintegration.dto.sync.SyncRequest;
 import com.lre.gitlabintegration.dto.sync.SyncResponse;
 import com.lre.gitlabintegration.repository.GitLabProjectCacheRepository;
-import com.lre.gitlabintegration.security.GitLabCiJobTokenAuthFilter;
+import com.lre.gitlabintegration.security.GitLabCiPrincipal;
 import com.lre.gitlabintegration.services.audit.AuditService;
 import com.lre.gitlabintegration.services.audit.AuditStatus;
 import com.lre.gitlabintegration.services.security.LreAuthorizationService;
@@ -36,7 +36,7 @@ public class SyncOrchestrationService {
             throw new AccessDeniedException("Missing authentication");
         }
 
-        if (!(authentication.getPrincipal() instanceof GitLabCiJobTokenAuthFilter.GitLabCiPrincipal principal)) {
+        if (!(authentication.getPrincipal() instanceof GitLabCiPrincipal principal)) {
             auditService.insertDenied(domain, project, "Invalid principal type");
             throw new AccessDeniedException("Invalid principal type");
         }

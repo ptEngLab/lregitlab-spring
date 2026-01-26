@@ -32,5 +32,4 @@ public class SyncController {
                 : ResponseEntity.badRequest().body(response);
     }
 
-
 }
