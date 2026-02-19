@@ -1,0 +1,770 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>LoadRunner Test Report</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    /* Client resets */
+    body, #bodyTable { margin:0 !important; padding:0 !important; width:100% !important; }
+    img { border:0; height:auto; line-height:100%; outline:none; text-decoration:none; }
+    table { border-collapse:collapse !important; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; }
+    td { border-collapse:collapse; }
+    a { text-decoration:none; }
+
+    /* Outlook font fallback */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    /* Zebra stripe helper (Outlook ignores nth-child so we set via th:style inline) */
+    .row-even { background-color:#f7f9fc; }
+    .row-odd  { background-color:#ffffff; }
+
+    /* Mobile */
+    @media only screen and (max-width:620px) {
+      .container-table { width:100% !important; }
+      .metric-cell     { display:block !important; width:100% !important; }
+      .hide-mobile     { display:none !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#e8edf3; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+<!-- Outer wrapper -->
+<table id="bodyTable" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#e8edf3"
+       style="margin:0; padding:0; background-color:#e8edf3; width:100%;">
+  <tr>
+    <td align="center" valign="top" style="padding:24px 10px;">
+
+      <!-- ═══════════════════════════════════════════════════════ -->
+      <!-- MAIN CONTAINER — 660px fixed for Outlook                -->
+      <!-- ═══════════════════════════════════════════════════════ -->
+      <!--[if mso]>
+      <table width="660" border="0" cellpadding="0" cellspacing="0" align="center">
+        <tr><td>
+      <![endif]-->
+      <table class="container-table" width="660" border="0" cellpadding="0" cellspacing="0" align="center"
+             style="width:660px; background-color:#ffffff; border:1px solid #d0d8e4;">
+        <tr><td style="padding:0;">
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  HEADER                                          ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:28px 32px 22px 32px;">
+
+                <!-- Logo -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td>
+                      <img th:src="${logoUrl}"
+                           src="https://via.placeholder.com/160x40/0d1f3c/a8c0e0?text=COMPANY"
+                           width="160" height="40" alt="Company Logo"
+                           style="display:block; border:0; height:40px; width:160px;"/>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:14px;">
+                      <p style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                font-size:20px; font-weight:700; color:#ffffff; line-height:1.3;
+                                mso-line-height-rule:exactly;">
+                        Performance Test Report
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:6px;">
+                      <p style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                font-size:12px; color:#7a9cc8; line-height:1.5; mso-line-height-rule:exactly;">
+                        Run ID:&nbsp;<span th:text="${runId}"
+                                          style="color:#a8c0e0; font-weight:700;">RUN-20240315-001</span>
+                        &nbsp;&nbsp;|&nbsp;&nbsp;
+                        Test:&nbsp;<span th:text="${testName}"
+                                        style="color:#a8c0e0; font-weight:700;">Checkout Load Test</span>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  STATUS BANNER                                   ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <!-- PASSED version -->
+              <td th:if="${status == 'PASSED'}"
+                  bgcolor="#ecfdf5"
+                  style="background-color:#ecfdf5; border-left:6px solid #10b981;
+                         padding:14px 28px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                         font-size:15px; font-weight:700; color:#065f46;">
+                &#x2705;&nbsp;&nbsp;Test Run PASSED
+              </td>
+              <!-- FAILED version -->
+              <td th:if="${status != 'PASSED'}"
+                  bgcolor="#fff1f2"
+                  style="background-color:#fff1f2; border-left:6px solid #ef4444;
+                         padding:14px 28px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                         font-size:15px; font-weight:700; color:#9b1c1c;">
+                &#x274C;&nbsp;&nbsp;Test Run FAILED
+              </td>
+            </tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  INTRODUCTION                                    ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:28px 32px 0 32px;">
+
+                <p style="margin:0 0 16px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                           font-size:14px; color:#2d3748; line-height:1.6; mso-line-height-rule:exactly;">
+                  Hi,
+                </p>
+
+                <p style="margin:0 0 14px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                           font-size:14px; color:#2d3748; line-height:1.7; mso-line-height-rule:exactly;">
+                  Please find below the performance test report for
+                  <strong th:text="${testName}" style="color:#0d1f3c;">Checkout Load Test</strong>
+                  &nbsp;(<span th:text="${runId}" style="color:#4a5568; font-weight:600;">RUN-20240315-001</span>).
+                  This report provides a comprehensive summary of the test execution, including key performance
+                  metrics, transaction response times, load generator utilisation, and any errors encountered
+                  during the test run.
+                </p>
+
+                <p th:if="${status == 'PASSED'}"
+                   style="margin:0 0 14px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                          font-size:14px; color:#2d3748; line-height:1.7; mso-line-height-rule:exactly;">
+                  The test run completed <strong style="color:#059669;">successfully</strong> within all
+                  defined SLA thresholds. Please review the detailed results below for further analysis.
+                </p>
+                <p th:if="${status != 'PASSED'}"
+                   style="margin:0 0 14px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                          font-size:14px; color:#2d3748; line-height:1.7; mso-line-height-rule:exactly;">
+                  The test run has been marked <strong style="color:#dc2626;">FAILED</strong> due to one or
+                  more SLA threshold breaches. A breakdown of the violated thresholds is provided below.
+                  Please engage the relevant teams for investigation and remediation.
+                </p>
+
+                <!-- Attachment note -->
+                <p th:if="${attachmentFileName != null}"
+                   style="margin:0 0 14px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                          font-size:14px; color:#2d3748; line-height:1.7; mso-line-height-rule:exactly;">
+                  The full results data has been attached as
+                  <strong th:text="${attachmentFileName}" style="color:#0d1f3c;">LoadRunner_Results.xlsx</strong>
+                  for your reference.
+                </p>
+
+                <p style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                           font-size:14px; color:#2d3748; line-height:1.7; mso-line-height-rule:exactly;">
+                  The high-level results are summarised below.
+                </p>
+
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 0 32px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td height="1" bgcolor="#e2e8f0"
+                        style="background-color:#e2e8f0; font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  THRESHOLD BREACHES  (FAILED only)               ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0"
+                 th:if="${hasBreaches}">
+            <tr>
+              <td style="padding:22px 32px 0 32px;">
+
+                <!-- Section heading -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-bottom:12px; border-bottom:2px solid #fecaca;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:11px; font-weight:700; color:#dc2626;
+                               text-transform:uppercase; letter-spacing:1px;">
+                      &#x26A0;&#xFE0F;&nbsp; SLA Threshold Breaches
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- One sentence box per breach -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0"
+                       th:each="breach, s : ${thresholdBreaches}"
+                       th:style="${s.first} ? 'margin-top:14px;' : 'margin-top:8px;'">
+                  <tr>
+                    <td bgcolor="#fff5f5"
+                        style="background-color:#fff5f5;
+                               border-top:1px solid #fecaca;
+                               border-right:1px solid #fecaca;
+                               border-bottom:1px solid #fecaca;
+                               border-left:4px solid #ef4444;
+                               padding:13px 16px;">
+
+                      <!-- Threshold label + limit vs actual inline -->
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                     font-size:11px; font-weight:700; color:#991b1b;
+                                     text-transform:uppercase; letter-spacing:.6px;
+                                     padding-bottom:7px; mso-line-height-rule:exactly;"
+                              th:text="${breach.thresholdName}">
+                            Max Failed Transactions
+                          </td>
+                          <!-- Limit vs Actual pills — pushed to right -->
+                          <td style="text-align:right; vertical-align:top; white-space:nowrap; padding-bottom:7px;">
+                            <span style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                         font-size:11px; color:#4a5568; font-weight:600;">Limit:&nbsp;</span>
+                            <span th:text="${breach.configuredLimit}"
+                                  style="display:inline; background-color:#dcfce7; color:#166534;
+                                         padding:2px 8px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                         font-size:11px; font-weight:700;">50</span>
+                            &nbsp;&nbsp;
+                            <span style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                         font-size:11px; color:#4a5568; font-weight:600;">Actual:&nbsp;</span>
+                            <span th:text="${breach.actualValue}"
+                                  style="display:inline; background-color:#fee2e2; color:#991b1b;
+                                         padding:2px 8px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                         font-size:11px; font-weight:700;">83</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"
+                              th:text="${breach.sentence}"
+                              style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                     font-size:13px; color:#4a1c1c; line-height:1.6;
+                                     mso-line-height-rule:exactly;">
+                            The number of failed transactions exceeded the configured threshold.
+                          </td>
+                        </tr>
+                      </table>
+
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+            <tr><td style="padding:0 32px;"><table width="100%"><tr><td height="20">&nbsp;</td></tr></table></td></tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  SECTION: HIGH-LEVEL METRICS                     ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:22px 32px 8px 32px;">
+
+                <!-- Section heading -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-bottom:12px; border-bottom:2px solid #e2e8f0;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:11px; font-weight:700; color:#4a5568;
+                               text-transform:uppercase; letter-spacing:1px;">
+                      &#x1F4CA;&nbsp; High-Level Metrics
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Three metric boxes using nested table -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+                  <tr>
+                    <!-- Passed -->
+                    <td width="32%" valign="top" style="padding-right:6px;">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#f0fdf4" align="center"
+                              style="background-color:#f0fdf4; border:1px solid #bbf7d0;
+                                     padding:18px 8px;">
+                            <p th:text="${metrics.transactionPassed}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:30px; font-weight:800; color:#059669;
+                                      line-height:1; mso-line-height-rule:exactly;">1240</p>
+                            <p style="margin:6px 0 0 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#6b7280; text-transform:uppercase;
+                                      letter-spacing:.6px; mso-line-height-rule:exactly;">
+                              Transactions Passed
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <!-- Spacer -->
+                    <td width="2%">&nbsp;</td>
+                    <!-- Failed -->
+                    <td width="32%" valign="top" style="padding-right:6px;">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#fff1f2" align="center"
+                              style="background-color:#fff1f2; border:1px solid #fecaca;
+                                     padding:18px 8px;">
+                            <p th:text="${metrics.transactionFailed}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:30px; font-weight:800; color:#dc2626;
+                                      line-height:1; mso-line-height-rule:exactly;">38</p>
+                            <p style="margin:6px 0 0 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#6b7280; text-transform:uppercase;
+                                      letter-spacing:.6px; mso-line-height-rule:exactly;">
+                              Transactions Failed
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <!-- Spacer -->
+                    <td width="2%">&nbsp;</td>
+                    <!-- VUsers -->
+                    <td width="32%" valign="top">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#eff6ff" align="center"
+                              style="background-color:#eff6ff; border:1px solid #bfdbfe;
+                                     padding:18px 8px;">
+                            <p th:text="${metrics.virtualUsers}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:30px; font-weight:800; color:#2563eb;
+                                      line-height:1; mso-line-height-rule:exactly;">200</p>
+                            <p style="margin:6px 0 0 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#6b7280; text-transform:uppercase;
+                                      letter-spacing:.6px; mso-line-height-rule:exactly;">
+                              Virtual Users (Peak)
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+            <tr><td style="padding:0 32px;"><table width="100%" border="0"><tr><td height="20">&nbsp;</td></tr></table></td></tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  SECTION: TEST DETAILS                           ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:0 32px 8px 32px; border-top:1px solid #edf2f7;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="padding-top:22px;">
+                  <tr>
+                    <td style="padding-bottom:12px; border-bottom:2px solid #e2e8f0;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:11px; font-weight:700; color:#4a5568;
+                               text-transform:uppercase; letter-spacing:1px;">
+                      &#x1F552;&nbsp; Test Details
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+                  <tr>
+                    <td width="32%" valign="top" style="padding-right:6px;">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#f7fafc" style="background-color:#f7fafc; border:1px solid #e2e8f0; padding:12px 14px;">
+                            <p style="margin:0 0 3px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#a0aec0; text-transform:uppercase; letter-spacing:.6px;">Start Time</p>
+                            <p th:text="${startTime}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:13px; font-weight:700; color:#1a202c; word-break:break-all;">2024-03-15 09:00</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td width="2%">&nbsp;</td>
+                    <td width="32%" valign="top" style="padding-right:6px;">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#f7fafc" style="background-color:#f7fafc; border:1px solid #e2e8f0; padding:12px 14px;">
+                            <p style="margin:0 0 3px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#a0aec0; text-transform:uppercase; letter-spacing:.6px;">End Time</p>
+                            <p th:text="${endTime}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:13px; font-weight:700; color:#1a202c; word-break:break-all;">2024-03-15 09:45</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td width="2%">&nbsp;</td>
+                    <td width="32%" valign="top">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#f7fafc" style="background-color:#f7fafc; border:1px solid #e2e8f0; padding:12px 14px;">
+                            <p style="margin:0 0 3px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#a0aec0; text-transform:uppercase; letter-spacing:.6px;">Duration</p>
+                            <p th:text="${duration}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:13px; font-weight:700; color:#1a202c;">45 min</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+            <tr><td style="padding:0 32px;"><table width="100%"><tr><td height="20">&nbsp;</td></tr></table></td></tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  SECTION: LOAD GENERATORS                        ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:0 32px 8px 32px; border-top:1px solid #edf2f7;">
+
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="padding-top:22px;">
+                  <tr>
+                    <td style="padding-bottom:12px; border-bottom:2px solid #e2e8f0;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:11px; font-weight:700; color:#4a5568;
+                               text-transform:uppercase; letter-spacing:1px;">
+                      &#x1F5A5;&#xFE0F;&nbsp; Load Generators
+                    </td>
+                  </tr>
+                </table>
+
+                <!--
+                  LG Rows — one row per LG.
+                  Each row contains two metric-style boxes side by side:
+                    Left  box: LG Name  (dark navy,  like a label card)
+                    Right box: VUser Count (blue, same style as High-Level Metrics)
+                -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+
+                  <tr th:each="lg, s : ${lgInfo}">
+
+                    <!-- ── Spacing row between LG rows (skip before first) ── -->
+                    <th:block th:if="${!s.first}">
+                      <!-- rendered as a tr above, so use margin via padding on the td below -->
+                    </th:block>
+
+                    <!-- Left box: LG Name -->
+                    <td width="49%" valign="top"
+                        th:style="${!s.first} ? 'padding-top:8px; padding-right:8px;' : 'padding-right:8px;'">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#f7fafc"
+                              style="background-color:#f7fafc; border-top:1px solid #e2e8f0;
+                                     border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;
+                                     border-left:4px solid #0d1f3c; padding:10px 14px;">
+                            <p style="margin:0 0 3px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#a0aec0; text-transform:uppercase;
+                                      letter-spacing:.6px; mso-line-height-rule:exactly;">
+                              Load Generator
+                            </p>
+                            <p th:text="${lg.lgName}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:16px; font-weight:700; color:#1a202c;
+                                      line-height:1; mso-line-height-rule:exactly;">LG-01</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+
+                    <!-- Right box: VUser Count -->
+                    <td width="49%" valign="top"
+                        th:style="${!s.first} ? 'padding-top:8px;' : ''">
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#f7fafc"
+                              style="background-color:#f7fafc; border-top:1px solid #e2e8f0;
+                                     border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;
+                                     border-left:4px solid #2563eb; padding:10px 14px;">
+                            <p style="margin:0 0 3px 0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:10px; color:#a0aec0; text-transform:uppercase;
+                                      letter-spacing:.6px; mso-line-height-rule:exactly;">
+                              Virtual Users
+                            </p>
+                            <p th:text="${lg.vuserCount}"
+                               style="margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                      font-size:16px; font-weight:700; color:#2563eb;
+                                      line-height:1; mso-line-height-rule:exactly;">50</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+
+                  </tr>
+
+                </table>
+
+                <!-- Total bar -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+                  <tr>
+                    <td bgcolor="#dbeafe"
+                        style="background-color:#dbeafe; padding:11px 14px;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:13px; color:#1e3a8a;">
+                      <strong>Total Virtual Users:</strong>&nbsp;
+                      <span th:text="${metrics.virtualUsers}"
+                            style="font-size:15px; font-weight:800; color:#1e3a8a;">200</span>
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+            <tr><td style="padding:0 32px;"><table width="100%"><tr><td height="20">&nbsp;</td></tr></table></td></tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  SECTION: TOP 10 SLOWEST TRANSACTIONS            ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:0 32px 8px 32px; border-top:1px solid #edf2f7;">
+
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="padding-top:22px;">
+                  <tr>
+                    <td style="padding-bottom:12px; border-bottom:2px solid #e2e8f0;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:11px; font-weight:700; color:#4a5568;
+                               text-transform:uppercase; letter-spacing:1px;">
+                      &#x1F422;&nbsp; Top 10 Slowest Transactions
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+                  <!-- Header -->
+                  <tr>
+                    <td width="26" bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px 10px 10px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">#</td>
+                    <td bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Transaction Name</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Min</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Avg</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Max</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">P90</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">P95</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Pass</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 8px 10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Fail</td>
+                  </tr>
+                  <!-- Data rows -->
+                  <tr th:each="tx, s : ${transactions}"
+                      th:style="${s.even} ? 'background-color:#f7f9fc;' : 'background-color:#ffffff;'">
+                    <!-- Rank -->
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 4px 9px 10px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:11px; font-weight:800; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 4px 9px 10px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:11px; font-weight:800; color:#4a5568;'"
+                        th:text="${s.count}">1</td>
+                    <!-- Name -->
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#2d3748; word-break:break-all;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#2d3748; word-break:break-all;'"
+                        th:text="${tx.name}">LoginTransaction</td>
+                    <!-- Min -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'"
+                        th:text="${tx.min}">120</td>
+                    <!-- Avg -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#1a202c;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#1a202c;'"
+                        th:text="${tx.avg}">840</td>
+                    <!-- Max -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'"
+                        th:text="${tx.max}">3200</td>
+                    <!-- P90 -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'"
+                        th:text="${tx.p90}">1800</td>
+                    <!-- P95 -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'"
+                        th:text="${tx.p95}">2400</td>
+                    <!-- Pass -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#059669;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#059669;'"
+                        th:text="${tx.pass}">980</td>
+                    <!-- Fail -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 8px 9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#dc2626;'
+                                           : 'background-color:#ffffff; padding:9px 8px 9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#dc2626;'"
+                        th:text="${tx.fail}">20</td>
+                  </tr>
+                </table>
+
+                <!-- Note box (only when > 10 transactions) -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0"
+                       th:if="${totalTransactions > 10}" style="margin-top:14px;">
+                  <tr>
+                    <td bgcolor="#eff6ff"
+                        style="background-color:#eff6ff; border-left:4px solid #3b82f6;
+                               padding:11px 15px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:12px; color:#1e3a5f; line-height:1.5; mso-line-height-rule:exactly;">
+                      <strong>&#x2139;&#xFE0F; Note:</strong>&nbsp;
+                      This test run included
+                      <strong th:text="${totalTransactions}">25</strong> transactions in total.
+                      Only the <strong>10 slowest</strong> by average response time are displayed above.
+                      Please refer to the full report in LoadRunner Analysis for complete transaction data.
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+            <tr><td style="padding:0 32px;"><table width="100%"><tr><td height="20">&nbsp;</td></tr></table></td></tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  SECTION: TOP 10 ERRORS                          ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:0 32px 8px 32px; border-top:1px solid #edf2f7;">
+
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="padding-top:22px;">
+                  <tr>
+                    <td style="padding-bottom:12px; border-bottom:2px solid #e2e8f0;
+                               font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:11px; font-weight:700; color:#4a5568;
+                               text-transform:uppercase; letter-spacing:1px;">
+                      &#x1F534;&nbsp; Top 10 Errors
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:14px;">
+                  <!-- Header -->
+                  <tr>
+                    <td width="26" bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px 10px 10px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">#</td>
+                    <td bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Error Code</td>
+                    <td bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Message</td>
+                    <td bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Script</td>
+                    <td bgcolor="#0d1f3c" style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Injector</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Count</td>
+                    <td bgcolor="#0d1f3c"  style="background-color:#0d1f3c; padding:10px 8px 10px 6px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:10px; font-weight:700; color:#e2e8f0; text-transform:uppercase;">Aff. VUs</td>
+                  </tr>
+                  <!-- Data rows -->
+                  <tr th:each="err, s : ${errors}"
+                      th:style="${s.even} ? 'background-color:#f7f9fc;' : 'background-color:#ffffff;'">
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 4px 9px 10px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:11px; font-weight:800; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 4px 9px 10px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:11px; font-weight:800; color:#4a5568;'"
+                        th:text="${s.count}">1</td>
+                    <!-- Error Code -->
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7;'">
+                      <span th:text="${err.errorCode}"
+                            style="display:inline; background-color:#fee2e2; color:#991b1b;
+                                   padding:2px 7px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                                   font-size:11px; font-weight:700;">E-26000</span>
+                    </td>
+                    <!-- Message -->
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#2d3748; word-break:break-word;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#2d3748; word-break:break-word;'"
+                        th:text="${err.message}">Connection timed out</td>
+                    <!-- Script -->
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'"
+                        th:text="${err.script}">CheckoutFlow</td>
+                    <!-- Injector -->
+                    <td th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; color:#4a5568;'"
+                        th:text="${err.injector}">LG-02</td>
+                    <!-- Count -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:13px; font-weight:800; color:#dc2626;'
+                                           : 'background-color:#ffffff; padding:9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:13px; font-weight:800; color:#dc2626;'"
+                        th:text="${err.count}">42</td>
+                    <!-- Affected VUs -->
+                    <td 
+                        th:style="${s.even} ? 'background-color:#f7f9fc; padding:9px 8px 9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#d97706;'
+                                           : 'background-color:#ffffff; padding:9px 8px 9px 6px; border-bottom:1px solid #edf2f7; font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif; font-size:12px; font-weight:700; color:#d97706;'"
+                        th:text="${err.affectedVusers}">18</td>
+                  </tr>
+                </table>
+
+                <!-- Note box (only when > 10 error types) -->
+                <table width="100%" border="0" cellpadding="0" cellspacing="0"
+                       th:if="${totalErrors > 10}" style="margin-top:14px;">
+                  <tr>
+                    <td bgcolor="#eff6ff"
+                        style="background-color:#eff6ff; border-left:4px solid #3b82f6;
+                               padding:11px 15px; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                               font-size:12px; color:#1e3a5f; line-height:1.5; mso-line-height-rule:exactly;">
+                      <strong>&#x2139;&#xFE0F; Note:</strong>&nbsp;
+                      This test recorded
+                      <strong th:text="${totalErrors}">18</strong> distinct error types.
+                      Only the <strong>top 10</strong> by occurrence count are shown above.
+                      See the full error log in LoadRunner Analysis for the complete list.
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+            <tr><td style="padding:0 32px;"><table width="100%"><tr><td height="20">&nbsp;</td></tr></table></td></tr>
+          </table>
+
+
+          <!-- ╔══════════════════════════════════════════════════╗ -->
+          <!-- ║  FOOTER                                          ║ -->
+          <!-- ╚══════════════════════════════════════════════════╝ -->
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td bgcolor="#f7fafc"
+                  style="background-color:#f7fafc; border-top:1px solid #e2e8f0;
+                         padding:18px 32px; text-align:center;
+                         font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+                         font-size:11px; color:#a0aec0; line-height:1.7; mso-line-height-rule:exactly;">
+                Automatically generated by the Performance Testing Platform.<br/>
+                Run ID:&nbsp;<strong th:text="${runId}" style="color:#718096;">RUN-001</strong>
+                &nbsp;&middot;&nbsp;
+                Generated:&nbsp;<span th:text="${generatedAt}" style="color:#718096;">2024-03-15 09:46 UTC</span><br/>
+                <span style="color:#cbd5e0;">Please do not reply to this email.</span>
+              </td>
+            </tr>
+          </table>
+
+
+        </td></tr>
+      </table>
+      <!--[if mso]>
+        </td></tr>
+      </table>
+      <![endif]-->
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
